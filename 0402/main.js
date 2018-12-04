@@ -49,43 +49,26 @@ module.exports = {
         sleepStart = timestamp.minute * 1;
       }
       if (/wakes up/.test(text)) {
-        if (!timetable[`${timestamp.month}${timestamp.day}-${guard}`]) {
-          timetable[`${timestamp.month}${timestamp.day}-${guard}`] = [];
+        if (!timetable[`${guard}`]) {
+          timetable[`${guard}`] = [];
         }
         for (let x = sleepStart; x < timestamp.minute * 1; x++) {
-          timetable[`${timestamp.month}${timestamp.day}-${guard}`][x] = "x";
+          timetable[`${guard}`][x] = !timetable[`${guard}`][x]
+            ? 1
+            : timetable[`${guard}`][x] + 1;
         }
       }
     }
-    let guardRanks = Object.entries(timetable).reduce((acc, [key, value]) => {
-      let [_date, guard] = key.split("-");
-      value = value.join("");
-      acc[guard] = acc[guard] ? value.length + acc[guard] : value.length;
-      return acc;
-    }, {});
-    let [sleepyGuard] = Object.entries(guardRanks).sort(
-      (a, b) => b[1] - a[1]
-    )[0];
-    let highestTime = { minute: 0, times: 0 };
-    Object.entries(timetable)
-      .filter(([dateGuard]) => {
-        return dateGuard.split("-")[1] === sleepyGuard;
-      })
-      .reduce((acc, [_, times]) => {
-        times.forEach((_, index) => {
-          if (!acc[index]) {
-            acc[index] = 0;
-          }
-          acc[index]++;
-        });
-        return acc;
-      }, [])
-      .forEach((value, index) => {
-        if (value >= highestTime.times) {
-          highestTime = { times: value, minute: index };
+    let highestFrequent = { guard: 0, minute: 0, frequency: 0 };
+    Object.entries(timetable).forEach(([guard, times]) => {
+      times.forEach((f, i) => {
+        if (f > highestFrequent.frequency) {
+          highestFrequent = { guard, minute: i, frequency: f };
         }
       });
-    return highestTime.minute * sleepyGuard;
+    });
+
+    return highestFrequent.guard * highestFrequent.minute;
   },
   parseTimestamp
 };
